@@ -1,4 +1,6 @@
 import logging
+import os
+from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from brain.ollama_client import brain
@@ -10,9 +12,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# DO NOT HARDCODE TOKENS IN PRODUCTION, BUT IN LOCAL WE WILL DO SO FOR EASE OF SETUP
-TELEGRAM_BOT_TOKEN = "8660715600:AAGTKJJiBNs7xA6OvvJ9T4Pq0dWeR53CAaE"
+# Load secrets from .env file
+load_dotenv()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("Missing TELEGRAM_BOT_TOKEN in environment (.env file).")
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user

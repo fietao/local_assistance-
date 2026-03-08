@@ -29,9 +29,9 @@ Since Fietao runs on your *local* PC, you need a way to talk to him when you lea
 
 ## Phase 4: Autonomous Operations (Open Interpreter)
 
-- [ ] Build the `automation` module using Open Interpreter.
-- [ ] Give Fietao permission to read local files, create folders, and run scripts on your computer.
-- [ ] Give Fietao permissions to move the user's physical mouse via `pyautogui` or Playwright.
+- [x] Build the `automation` module using Open Interpreter.
+- [x] Give Fietao permission to read local files, create folders, and run scripts on your computer.
+- [x] Give Fietao permissions to move the user's physical mouse via `pyautogui` or Playwright.
 
 ## Phase 5: Deep Memory (Vector Search)
 

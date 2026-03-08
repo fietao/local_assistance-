@@ -4,3 +4,4 @@ __pycache__/
 temp/
 latest_screen.png
 rename.py
+.env

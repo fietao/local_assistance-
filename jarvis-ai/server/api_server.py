@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from brain.ollama_client import brain
 from vision.screen_capture import vision
 from voice.microphone_listener import voice
+from automation.interpreter_agent import agent
 
 app = FastAPI(title="Fietao AI API", version="1.0.0")
 
@@ -28,7 +29,7 @@ def read_root():
                 button { padding: 10px 20px; background: #45a29e; color: #0b0c10; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
                 button:hover { background: #66fcf1; }
                 .action-btns { margin-top: 10px; }
-                .action-btns button { margin-right: 10px; margin-left: 0; }
+                .action-btns button { margin-right: 10px; margin-left: 0; margin-bottom: 10px; }
             </style>
         </head>
         <body>
@@ -36,20 +37,21 @@ def read_root():
             <p>System Status: <b style="color: #66fcf1;">ONLINE</b></p>
             
             <div class="panel" style="border-color: #ffcc00;">
-                <h3>🧠 AI Thoughts (Ollama Local Memory)</h3>
+                <h3>🧠 AI Thoughts & Senses</h3>
                 <div class="chat-box" id="chat-box">
                     <p style="margin: 0; color: #66fcf1;">Fietao is online and listening...</p>
                 </div>
                 <input type="text" id="chat-input" placeholder="Give Fietao a command or ask a question..." onkeypress="if(event.key === 'Enter') sendMessage()">
-                <button onclick="sendMessage(null, false)">Send to Brain</button>
+                <button onclick="sendMessage(null, false, false)">Send to Brain</button>
                 
                 <div class="action-btns">
                     <button style="background-color: #c5c6c7;" onclick="triggerVision()">👁️ Instruct AI to Read Screen</button>
                     <button style="background-color: #ffcc00; color: #000;" onclick="triggerVoice()">🎤 Voice: Listen & Speak</button>
+                    <button style="background-color: #dc3545; color: #fff;" onclick="triggerAutomation()">🦾 Run Autonomous Interpreter Action</button>
                 </div>
                 
                 <script>
-                    async function sendMessage(overrideText = null, speakResponse = false) {
+                    async function sendMessage(overrideText = null, speakResponse = false, requiresCoding = false) {
                         const input = document.getElementById('chat-input');
                         const chatBox = document.getElementById('chat-box');
                         const message = overrideText || input.value.trim();
@@ -64,7 +66,7 @@ def read_root():
                             const response = await fetch('/api/chat', {
                                 method: 'POST',
                                 headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({ message: message, requires_coding: false, speak_response: speakResponse })
+                                body: JSON.stringify({ message: message, requires_coding: requiresCoding, speak_response: speakResponse })
                             });
                             const data = await response.json();
                             
@@ -73,14 +75,13 @@ def read_root():
                             chatBox.innerHTML += `<p style="margin: 10px 0; color: #ffcc00;"><b>Fietao:</b> ${formattedReply}</p>`;
                             chatBox.scrollTop = chatBox.scrollHeight;
                         } catch (error) {
-                            chatBox.innerHTML += `<p style="margin: 5px 0; color: #ff0000;"><b>System Error:</b> Cannot connect to Brain API!</p>`;
+                            chatBox.innerHTML += `<p style="margin: 5px 0; color: #ff0000;"><b>System Error:</b> Cannot connect to API!</p>`;
                         }
                     }
 
                     function triggerVision() {
                         const loadingMsg = "Please take a screenshot using your vision module and analyze what is on my screen right now.";
-                        // Tell Fietao to immediately run OCR vision test
-                        sendMessage(loadingMsg, false);
+                        sendMessage(loadingMsg, false, false);
                     }
                     
                     async function triggerVoice() {
@@ -95,19 +96,29 @@ def read_root():
                             if (data.text.startsWith("(")) {
                                 chatBox.innerHTML += `<p style="margin: 5px 0; color: #c5c6c7;"><b>System:</b> ${data.text}</p>`;
                             } else {
-                                // Transcribed successfully, send to brain and enable speech!
-                                sendMessage(data.text, true);
+                                sendMessage(data.text, true, false);
                             }
                         } catch (err) {
                             chatBox.innerHTML += `<p style="margin: 5px 0; color: #ff0000;"><b>Microphone Error:</b> Could not access local mic.</p>`;
                         }
+                    }
+                    
+                    function triggerAutomation() {
+                        const input = document.getElementById('chat-input');
+                        const message = input.value.trim();
+                        if (!message) {
+                            alert("Please type a command in the box first! (e.g. 'Open the calculator app')");
+                            return;
+                        }
+                        // Send as autonomous action (requires_coding = true)
+                        sendMessage(message, false, true);
                     }
                 </script>
             </div>
             
             <div class="panel">
                 <h3>📜 Task History & Execution</h3>
-                <p>No active tasks currently executed by Open Interpreter.</p>
+                <p>Check the server terminal logs to see live Python code generated and executed by Open Interpreter.</p>
             </div>
         </body>
     </html>
@@ -118,15 +129,21 @@ def read_root():
 def chat_with_fietao(req: ChatRequest):
     """Passes the chat request from the UI straight to the Ollama Brain."""
     
+    # Check if the user is asking strictly for the autonomous Open Interpreter Module
+    if req.requires_coding:
+        # Trigger the python autonomous script writer via background thread
+        response = agent.execute_action(req.message)
+        return {"reply": response}
+    
     # Check if the user is asking the vision module to look at the screen
     if "analyze what is on my screen" in req.message.lower() or "look at my screen" in req.message.lower():
         # Inject the OCR text from the UI tool
         seen_text = vision.read_text_from_screen()
         modified_prompt = f"{req.message}\n\n[SYSTEM INJECTION: The Vision module just took a screenshot. The text visible on the user's screen right now is: '{seen_text}'. Respond to the user naturally based on what you saw.]"
-        response = brain.think(prompt=modified_prompt, requires_coding=req.requires_coding)
+        response = brain.think(prompt=modified_prompt, requires_coding=False)
     else:
         # Standard brain chat
-        response = brain.think(prompt=req.message, requires_coding=req.requires_coding)
+        response = brain.think(prompt=req.message, requires_coding=False)
         
     # Trigger speaker if requested (e.g., from the Voice button)
     if req.speak_response:
