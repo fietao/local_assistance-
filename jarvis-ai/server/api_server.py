@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+import re
 from brain.ollama_client import brain
 from vision.screen_capture import vision
 from voice.microphone_listener import voice
 from automation.interpreter_agent import agent
+from browser.web_navigator import browser_ext
 
 app = FastAPI(title="Fietao AI API", version="1.0.0")
 
@@ -135,12 +137,25 @@ def chat_with_fietao(req: ChatRequest):
         response = agent.execute_action(req.message)
         return {"reply": response}
     
+    # Check if the user's message contains a URL to scrape
+    url_match = re.search(r'(https?://\S+|www\.\S+)', req.message)
+    
     # Check if the user is asking the vision module to look at the screen
     if "analyze what is on my screen" in req.message.lower() or "look at my screen" in req.message.lower():
         # Inject the OCR text from the UI tool
         seen_text = vision.read_text_from_screen()
         modified_prompt = f"{req.message}\n\n[SYSTEM INJECTION: The Vision module just took a screenshot. The text visible on the user's screen right now is: '{seen_text}'. Respond to the user naturally based on what you saw.]"
         response = brain.think(prompt=modified_prompt, requires_coding=False)
+        
+    elif url_match:
+        # User pasted a URL! Activate the invisible Chrome browser to read the text.
+        url_to_scrape = url_match.group(0)
+        print(f"[API Server] URL detected! Activating Browser Extention for {url_to_scrape}...")
+        scraped_text = browser_ext.browse_url(url_to_scrape)
+        
+        modified_prompt = f"{req.message}\n\n[SYSTEM INJECTION: The Browser module navigated to {url_to_scrape}. Here is the page content:\n{scraped_text}\nEnd of page content.]"
+        response = brain.think(prompt=modified_prompt, requires_coding=False)
+        
     else:
         # Standard brain chat
         response = brain.think(prompt=req.message, requires_coding=False)

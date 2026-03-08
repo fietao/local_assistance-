@@ -38,7 +38,7 @@ Since Fietao runs on your *local* PC, you need a way to talk to him when you lea
 - [x] Integrate `chromadb` into `memory/vector_db.py`.
 - [x] Teach Fietao to digest PDF documents and long-term notes so he remembers you across reboots.
 
-## Phase 6: Browser & Playwright
+## Phase 6: Browser & Playwright (✅ COMPLETED)
 
-- [ ] Build out the `browser` module.
-- [ ] Teach Fietao to open Chrome autonomously, log into websites, and scrape data for you.
+- [x] Build out the `browser` module.
+- [x] Teach Fietao to open Chrome autonomously, log into websites, and scrape data for you.
