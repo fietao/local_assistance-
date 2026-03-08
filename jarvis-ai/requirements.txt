@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+ollama
+open-interpreter
+opencv-python
+pytesseract
+pyautogui
+keyboard
+playwright
+SpeechRecognition
+python-telegram-bot
+chromadb
