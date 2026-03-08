@@ -8,15 +8,17 @@ class InterpreterAgent:
         interpreter.llm.model = model
         interpreter.llm.api_base = "http://localhost:11434"
         
-        # Give full autonomous permissions
-        interpreter.auto_run = True
-        interpreter.safe_mode = "off"
+        # INTERACTIVE MODE: Ask user before running code, allow Fietao to ask questions!
+        interpreter.auto_run = False
+        interpreter.safe_mode = "ask"
         
-        # Instruct the system to act gracefully
+        # Instruct the system to act gracefully and interactively
         interpreter.system_message += (
-            "You are Fietao's autonomous action module. You have permission to write scripts, "
-            "read files, create folders, and run Python code. Also you can control the mouse and keyboard "
-            "using standard libraries (pyautogui)."
+            "You are Fietao's autonomous coding module. You have permission to write scripts, "
+            "read files, create folders, and run Python code. "
+            "CRITICAL RULE: If a user's project request is vague, or you need more information "
+            "to write the correct code, you MUST stop and ask the user clarifying questions "
+            "before proceeding with writing the code."
         )
         
         self.is_running = False
@@ -24,21 +26,32 @@ class InterpreterAgent:
     def execute_action(self, task: str):
         """Runs the open-interpreter agent in a background thread."""
         if self.is_running:
-            return "Fietao's action hands are already busy executing another task!"
+            return "Fietao's coding hands are already busy executing another task!"
             
         def _run_interpreter():
             self.is_running = True
             try:
-                print(f"[Automation] Starting autonomous task: {task}")
-                # This will automatically spin up standard interpreter execution loop in the background!
+                print(f"\\n================================================")
+                print(f"[Fietao Auto-Coder] Starting Task: {task}")
+                print(f"WARNING: I will ask you for permission in this terminal before executing code.")
+                print(f"================================================\\n")
+                
+                # This spins up the interactive interpreter loop in the terminal
                 interpreter.chat(task)
-                print("[Automation] Task Completed.")
+                
+                print("\\n[Fietao Auto-Coder] Task Completed.\\n")
             except Exception as e:
-                print(f"[Automation Error] {e}")
+                print(f"\\n[Fietao Auto-Coder Error] {e}\\n")
             finally:
                 self.is_running = False
                 
+        # Start in background so dashboard API doesn't hang
         threading.Thread(target=_run_interpreter, daemon=True).start()
-        return f"Autonomous agent has started executing: '{task}' in the background."
+        
+        return (
+            f"I have started the autonomous coding agent for task: '{task}'. "
+            f"Please check your VS Code Terminal— I will be writing code there and I will "
+            f"pause to ask you for permission before I run any scripts!"
+        )
 
 agent = InterpreterAgent()
