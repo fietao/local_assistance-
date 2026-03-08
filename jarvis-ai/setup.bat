@@ -1,6 +1,6 @@
 @echo off
 echo =========================================
-echo    Jarvis AI System - Setup Script
+echo    Fietao AI System - Setup Script
 echo =========================================
 echo.
 echo Installing Python dependencies from requirements.txt...

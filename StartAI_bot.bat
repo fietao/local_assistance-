@@ -1,1 +1,1 @@
-interpreter -y --model ollama/qwen2.5coder:7b
+interpreter -y --model ollama/qwen2.5-coder:7b
