@@ -35,8 +35,8 @@ Since Fietao runs on your *local* PC, you need a way to talk to him when you lea
 
 ## Phase 5: Deep Memory (Vector Search)
 
-- [ ] Integrate `chromadb` into `memory/vector_db.py`.
-- [ ] Teach Fietao to digest PDF documents and long-term notes so he remembers you across reboots.
+- [x] Integrate `chromadb` into `memory/vector_db.py`.
+- [x] Teach Fietao to digest PDF documents and long-term notes so he remembers you across reboots.
 
 ## Phase 6: Browser & Playwright
 
